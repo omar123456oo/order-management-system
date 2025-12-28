@@ -486,112 +486,188 @@ const LoginScreen = ({ onLogin, theme, onToggleTheme, onRegister }) => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${theme === 'dark' ? 'bg-neutral-900' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-neutral-900' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'}`}>
+      {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-secondary-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
         <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-primary-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
       </div>
 
-      <div className={`relative w-full max-w-md p-8 rounded-2xl shadow-2xl backdrop-blur-sm animate-scaleIn ${theme === 'dark' ? 'bg-neutral-800 bg-opacity-90' : 'bg-white bg-opacity-90'}`}>
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500">
-              <Coffee className="text-white" size={32} />
+      <div className="relative container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8 items-center min-h-screen">
+          {/* Left Side - System Brief */}
+          <div className="space-y-6 animate-slideInLeft">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 animate-float">
+                <Coffee className="text-white" size={40} />
+              </div>
+              <div>
+                <h1 className={`text-4xl font-bold ${theme === 'dark' ? 'text-white' : 'text-neutral-800'}`}>
+                  Office <span className="gradient-text">Order System</span>
+                </h1>
+                <p className={`text-lg ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                  Streamline Your Office Refreshments
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-neutral-800'}`}>
-                Office <span className="gradient-text">Orders</span>
-              </h1>
-              <p className="text-sm text-neutral-500">Management System</p>
+
+            {/* System Description */}
+            <div className={`p-6 rounded-2xl backdrop-blur-sm ${theme === 'dark' ? 'bg-neutral-800/50' : 'bg-white/50'} shadow-xl`}>
+              <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-neutral-800'}`}>
+                Welcome to Your Digital Office Café ☕
+              </h2>
+              <p className={`text-base leading-relaxed mb-4 ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                Say goodbye to manual order taking! Our intelligent system revolutionizes how your office handles daily refreshment orders, making it easier, faster, and more efficient than ever.
+              </p>
+              <p className={`text-base leading-relaxed ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                Whether you're an employee ordering your morning coffee, an office boy managing deliveries, or an admin tracking inventory - we've got you covered!
+              </p>
+            </div>
+
+            {/* Key Features */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: '🚀', title: 'Quick Orders', desc: 'Place orders in seconds' },
+                { icon: '📊', title: 'Real-time Tracking', desc: 'Monitor order status live' },
+                { icon: '🎯', title: 'Smart Inventory', desc: 'Auto stock management' },
+                { icon: '⏰', title: 'Working Hours', desc: 'Automated scheduling' },
+              ].map((feature, index) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-xl backdrop-blur-sm transition-all hover-lift ${theme === 'dark' ? 'bg-neutral-800/50 hover:bg-neutral-700/50' : 'bg-white/50 hover:bg-white/70'
+                    } shadow-lg`}
+                >
+                  <div className="text-3xl mb-2">{feature.icon}</div>
+                  <h3 className={`font-bold mb-1 ${theme === 'dark' ? 'text-white' : 'text-neutral-800'}`}>
+                    {feature.title}
+                  </h3>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                    {feature.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className={`p-6 rounded-2xl ${theme === 'dark' ? 'bg-gradient-to-r from-primary-900/50 to-secondary-900/50' : 'bg-gradient-to-r from-primary-100 to-secondary-100'} shadow-xl`}>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className={`text-3xl font-bold gradient-text`}>19+</div>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>Items Available</p>
+                </div>
+                <div>
+                  <div className={`text-3xl font-bold gradient-text`}>4</div>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>Categories</p>
+                </div>
+                <div>
+                  <div className={`text-3xl font-bold gradient-text`}>24/7</div>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>Access</p>
+                </div>
+              </div>
             </div>
           </div>
-          <button
-            onClick={onToggleTheme}
-            className={`p-2 rounded-lg transition-all hover-scale ${theme === 'dark' ? 'bg-neutral-700 hover:bg-neutral-600' : 'bg-neutral-100 hover:bg-neutral-200'}`}
-          >
-            {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-primary-500" />}
-          </button>
-        </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className={`block mb-2 font-semibold ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="input"
-              placeholder="Enter your username"
-              disabled={isLoading}
-            />
-          </div>
+          {/* Right Side - Login Form */}
+          <div className="flex items-center justify-center animate-slideInRight">
+            <div className={`relative w-full max-w-md p-8 rounded-2xl shadow-2xl backdrop-blur-sm ${theme === 'dark' ? 'bg-neutral-800 bg-opacity-90' : 'bg-white bg-opacity-90'}`}>
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-neutral-800'}`}>
+                    Sign In
+                  </h2>
+                  <p className="text-sm text-neutral-500">Access your account</p>
+                </div>
+                <button
+                  onClick={onToggleTheme}
+                  className={`p-2 rounded-lg transition-all hover-scale ${theme === 'dark' ? 'bg-neutral-700 hover:bg-neutral-600' : 'bg-neutral-100 hover:bg-neutral-200'}`}
+                >
+                  {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-primary-500" />}
+                </button>
+              </div>
 
-          <div>
-            <label className={`block mb-2 font-semibold ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="input"
-              placeholder="Enter your password"
-              disabled={isLoading}
-            />
-          </div>
+              <div className="space-y-4">
+                <div>
+                  <label className={`block mb-2 font-semibold ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="input"
+                    placeholder="Enter your username"
+                    disabled={isLoading}
+                  />
+                </div>
 
-          {error && (
-            <div className="p-3 rounded-lg bg-error-50 border border-error-200 text-error-700 flex items-center gap-2 animate-slideDown">
-              <XCircle size={18} />
-              <span className="text-sm font-medium">{error}</span>
+                <div>
+                  <label className={`block mb-2 font-semibold ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="input"
+                    placeholder="Enter your password"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 rounded-lg bg-error-50 border border-error-200 text-error-700 flex items-center gap-2 animate-slideDown">
+                    <XCircle size={18} />
+                    <span className="text-sm font-medium">{error}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                  className="btn btn-primary w-full py-3 text-base font-semibold"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                      Logging in...
+                    </span>
+                  ) : (
+                    'Login'
+                  )}
+                </button>
+
+                <div className="divider"></div>
+
+                <button
+                  onClick={onRegister}
+                  className="btn btn-outline w-full py-3 text-base font-semibold"
+                >
+                  <UserPlus size={18} />
+                  Register as Employee
+                </button>
+              </div>
+
+              <div className={`mt-6 p-4 rounded-xl ${theme === 'dark' ? 'bg-neutral-700' : 'bg-primary-50'}`}>
+                <p className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                  🔑 Demo Credentials:
+                </p>
+                <div className="space-y-1 text-xs">
+                  <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
+                    👤 <strong>Employee:</strong> john.doe / emp123
+                  </p>
+                  <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
+                    🚀 <strong>Office Boy:</strong> office.boy / boy123
+                  </p>
+                  <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
+                    ⚡ <strong>Admin:</strong> admin / admin123
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="btn btn-primary w-full py-3 text-base font-semibold"
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                Logging in...
-              </span>
-            ) : (
-              'Login'
-            )}
-          </button>
-
-          <div className="divider"></div>
-
-          <button
-            onClick={onRegister}
-            className="btn btn-outline w-full py-3 text-base font-semibold"
-          >
-            <UserPlus size={18} />
-            Register as Employee
-          </button>
-        </div>
-
-        <div className={`mt-6 p-4 rounded-xl ${theme === 'dark' ? 'bg-neutral-700' : 'bg-primary-50'}`}>
-          <p className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-neutral-300' : 'text-neutral-700'}`}>
-            🔑 Demo Credentials:
-          </p>
-          <div className="space-y-1 text-xs">
-            <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
-              👤 <strong>Employee:</strong> john.doe / emp123
-            </p>
-            <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
-              🚀 <strong>Office Boy:</strong> office.boy / boy123
-            </p>
-            <p className={theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}>
-              ⚡ <strong>Admin:</strong> admin / admin123
-            </p>
           </div>
         </div>
       </div>
