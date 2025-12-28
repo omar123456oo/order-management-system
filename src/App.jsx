@@ -108,6 +108,15 @@ const App = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  // Apply dark mode class to HTML element
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   if (showRegister) {
     return <RegisterScreen onBack={() => setShowRegister(false)} theme={theme} showToast={showToast} />;
   }

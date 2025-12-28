@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
@@ -11,123 +11,72 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Initialize SQLite Database
-const db = new sqlite3.Database('./office_order.db', (err) => {
-    if (err) {
-        console.error('Error opening database:', err);
-    } else {
-        console.log('✅ Connected to SQLite database');
-        initializeDatabase();
-    }
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/office_order_system';
+
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// Mongoose Schemas
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, required: true, enum: ['employee', 'officeBoy', 'admin'] },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    department: String,
+    phone: String,
+    createdAt: { type: Date, default: Date.now }
 });
 
-// Initialize Database Tables
-function initializeDatabase() {
-    // Users Table
-    db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      department TEXT,
-      phone TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `, (err) => {
-        if (err) {
-            console.error('Error creating users table:', err);
-        } else {
-            console.log('✅ Users table ready');
-            seedDefaultUsers();
-        }
-    });
+const stockSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    min_level: { type: Number, required: true },
+    icon: String,
+    category: String
+});
 
-    // Orders Table
-    db.run(`
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      user_name TEXT NOT NULL,
-      item_id INTEGER NOT NULL,
-      item_name TEXT NOT NULL,
-      item_icon TEXT,
-      status TEXT DEFAULT 'pending',
-      date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      delivered_at DATETIME,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `, (err) => {
-        if (err) {
-            console.error('Error creating orders table:', err);
-        } else {
-            console.log('✅ Orders table ready');
-        }
-    });
+const orderSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    user_name: { type: String, required: true },
+    item_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Stock', required: true },
+    item_name: { type: String, required: true },
+    item_icon: String,
+    status: { type: String, default: 'pending', enum: ['pending', 'delivered'] },
+    date: { type: Date, default: Date.now },
+    delivered_at: Date
+});
 
-    // Stock Table
-    db.run(`
-    CREATE TABLE IF NOT EXISTS stock (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      quantity INTEGER NOT NULL,
-      min_level INTEGER NOT NULL,
-      icon TEXT,
-      category TEXT
-    )
-  `, (err) => {
-        if (err) {
-            console.error('Error creating stock table:', err);
-        } else {
-            console.log('✅ Stock table ready');
-            seedDefaultStock();
-        }
-    });
-}
+// Models
+const User = mongoose.model('User', userSchema);
+const Stock = mongoose.model('Stock', stockSchema);
+const Order = mongoose.model('Order', orderSchema);
 
-// Seed Default Users
-async function seedDefaultUsers() {
-    db.get('SELECT COUNT(*) as count FROM users', async (err, row) => {
-        if (err) {
-            console.error('Error checking users:', err);
-            return;
-        }
-
-        if (row.count === 0) {
+// Seed Default Data
+async function seedDatabase() {
+    try {
+        // Seed Users
+        const userCount = await User.countDocuments();
+        if (userCount === 0) {
             const defaultUsers = [
-                { username: 'john.doe', password: 'emp123', role: 'employee', name: 'John Doe', email: 'john@company.com', department: 'IT', phone: '0123456789' },
-                { username: 'jane.smith', password: 'emp123', role: 'employee', name: 'Jane Smith', email: 'jane@company.com', department: 'HR', phone: '0123456780' },
-                { username: 'mike.jones', password: 'emp123', role: 'employee', name: 'Mike Jones', email: 'mike@company.com', department: 'Marketing', phone: '0123456781' },
-                { username: 'office.boy', password: 'boy123', role: 'officeBoy', name: 'Ahmed Ali', email: 'ahmed@company.com', department: null, phone: '0123456782' },
-                { username: 'admin', password: 'admin123', role: 'admin', name: 'Admin User', email: 'admin@company.com', department: null, phone: '0123456783' }
+                { username: 'john.doe', password: await bcrypt.hash('emp123', 10), role: 'employee', name: 'John Doe', email: 'john@company.com', department: 'IT', phone: '0123456789' },
+                { username: 'jane.smith', password: await bcrypt.hash('emp123', 10), role: 'employee', name: 'Jane Smith', email: 'jane@company.com', department: 'HR', phone: '0123456780' },
+                { username: 'mike.jones', password: await bcrypt.hash('emp123', 10), role: 'employee', name: 'Mike Jones', email: 'mike@company.com', department: 'Marketing', phone: '0123456781' },
+                { username: 'office.boy', password: await bcrypt.hash('boy123', 10), role: 'officeBoy', name: 'Ahmed Ali', email: 'ahmed@company.com', phone: '0123456782' },
+                { username: 'admin', password: await bcrypt.hash('admin123', 10), role: 'admin', name: 'Admin User', email: 'admin@company.com', phone: '0123456783' }
             ];
-
-            for (const user of defaultUsers) {
-                const hashedPassword = await bcrypt.hash(user.password, 10);
-                db.run(
-                    'INSERT INTO users (username, password, role, name, email, department, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [user.username, hashedPassword, user.role, user.name, user.email, user.department, user.phone],
-                    (err) => {
-                        if (err) console.error('Error seeding user:', err);
-                    }
-                );
-            }
+            await User.insertMany(defaultUsers);
             console.log('✅ Default users seeded');
         }
-    });
-}
 
-// Seed Default Stock
-function seedDefaultStock() {
-    db.get('SELECT COUNT(*) as count FROM stock', (err, row) => {
-        if (err) {
-            console.error('Error checking stock:', err);
-            return;
-        }
-
-        if (row.count === 0) {
+        // Seed Stock
+        const stockCount = await Stock.countDocuments();
+        if (stockCount === 0) {
             const defaultStock = [
                 { name: 'Espresso', quantity: 120, min_level: 25, icon: '☕', category: 'Hot Drinks' },
                 { name: 'Cappuccino', quantity: 100, min_level: 20, icon: '☕', category: 'Hot Drinks' },
@@ -149,18 +98,18 @@ function seedDefaultStock() {
                 { name: 'Sandwich', quantity: 40, min_level: 8, icon: '🥪', category: 'Light Meals' },
                 { name: 'Salad Bowl', quantity: 35, min_level: 7, icon: '🥗', category: 'Light Meals' }
             ];
-
-            const insertStock = db.prepare('INSERT INTO stock (name, quantity, min_level, icon, category) VALUES (?, ?, ?, ?, ?)');
-
-            defaultStock.forEach(item => {
-                insertStock.run(item.name, item.quantity, item.min_level, item.icon, item.category);
-            });
-
-            insertStock.finalize();
+            await Stock.insertMany(defaultStock);
             console.log('✅ Default stock seeded with 19 items');
         }
-    });
+    } catch (error) {
+        console.error('Error seeding database:', error);
+    }
 }
+
+// Initialize database after connection
+mongoose.connection.once('open', () => {
+    seedDatabase();
+});
 
 // ============= API ROUTES =============
 
@@ -177,37 +126,37 @@ app.post('/api/register', async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert new user
-        db.run(
-            'INSERT INTO users (username, password, role, name, email, department, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [username, hashedPassword, 'employee', name, email, department, phone],
-            function (err) {
-                if (err) {
-                    if (err.message.includes('UNIQUE')) {
-                        return res.status(400).json({ error: 'Username or email already exists' });
-                    }
-                    return res.status(500).json({ error: 'Database error' });
-                }
+        // Create new user
+        const user = new User({
+            username,
+            password: hashedPassword,
+            role: 'employee',
+            name,
+            email,
+            department,
+            phone
+        });
 
-                res.status(201).json({
-                    message: 'Registration successful!',
-                    user: { id: this.lastID, username, name, email, role: 'employee' }
-                });
-            }
-        );
+        await user.save();
+
+        res.status(201).json({
+            message: 'Registration successful!',
+            user: { id: user._id, username, name, email, role: 'employee' }
+        });
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ error: 'Username or email already exists' });
+        }
         res.status(500).json({ error: 'Server error' });
     }
 });
 
 // Login
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
-    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
-        }
+    try {
+        const user = await User.findOne({ username });
 
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -219,135 +168,131 @@ app.post('/api/login', (req, res) => {
         }
 
         // Don't send password to client
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({ user: userWithoutPassword });
-    });
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ user: userObj });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Get All Users
-app.get('/api/users', (req, res) => {
-    db.all('SELECT id, username, role, name, email, department, phone, created_at FROM users', (err, users) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
-        }
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await User.find({}, '-password');
         res.json(users);
-    });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Get All Stock Items
-app.get('/api/stock', (req, res) => {
-    db.all('SELECT * FROM stock', (err, items) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
-        }
+app.get('/api/stock', async (req, res) => {
+    try {
+        const items = await Stock.find();
         res.json(items);
-    });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Update Stock Quantity
-app.put('/api/stock/:id', (req, res) => {
+app.put('/api/stock/:id', async (req, res) => {
     const { id } = req.params;
     const { quantity } = req.body;
 
-    db.run('UPDATE stock SET quantity = ? WHERE id = ?', [quantity, id], function (err) {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
-        }
+    try {
+        await Stock.findByIdAndUpdate(id, { quantity });
         res.json({ message: 'Stock updated successfully' });
-    });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Create Order
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
     const { user_id, user_name, item_id, item_name, item_icon } = req.body;
 
-    // Check if user already ordered today
-    const today = new Date().toISOString().split('T')[0];
-    db.get(
-        'SELECT * FROM orders WHERE user_id = ? AND date(date) = ?',
-        [user_id, today],
-        (err, existingOrder) => {
-            if (err) {
-                return res.status(500).json({ error: 'Database error' });
-            }
+    try {
+        // Check if user already ordered today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            if (existingOrder) {
-                return res.status(400).json({ error: 'You have already placed an order today' });
-            }
+        const existingOrder = await Order.findOne({
+            user_id,
+            date: { $gte: today }
+        });
 
-            // Create new order
-            db.run(
-                'INSERT INTO orders (user_id, user_name, item_id, item_name, item_icon, status) VALUES (?, ?, ?, ?, ?, ?)',
-                [user_id, user_name, item_id, item_name, item_icon, 'pending'],
-                function (err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Database error' });
-                    }
-
-                    db.get('SELECT * FROM orders WHERE id = ?', [this.lastID], (err, order) => {
-                        if (err) {
-                            return res.status(500).json({ error: 'Database error' });
-                        }
-                        res.status(201).json(order);
-                    });
-                }
-            );
+        if (existingOrder) {
+            return res.status(400).json({ error: 'You have already placed an order today' });
         }
-    );
+
+        // Create new order
+        const order = new Order({
+            user_id,
+            user_name,
+            item_id,
+            item_name,
+            item_icon,
+            status: 'pending'
+        });
+
+        await order.save();
+        res.status(201).json(order);
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Get All Orders
-app.get('/api/orders', (req, res) => {
-    db.all('SELECT * FROM orders ORDER BY date DESC', (err, orders) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
-        }
+app.get('/api/orders', async (req, res) => {
+    try {
+        const orders = await Order.find().sort({ date: -1 });
         res.json(orders);
-    });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Update Order Status
-app.put('/api/orders/:id', (req, res) => {
+app.put('/api/orders/:id', async (req, res) => {
     const { id } = req.params;
     const { status, item_id } = req.body;
 
-    db.run(
-        'UPDATE orders SET status = ?, delivered_at = ? WHERE id = ?',
-        [status, new Date().toISOString(), id],
-        function (err) {
-            if (err) {
-                return res.status(500).json({ error: 'Database error' });
-            }
+    try {
+        const updateData = {
+            status,
+            delivered_at: new Date()
+        };
 
-            // Decrease stock when delivered
-            if (status === 'delivered' && item_id) {
-                db.run('UPDATE stock SET quantity = quantity - 1 WHERE id = ?', [item_id]);
-            }
+        await Order.findByIdAndUpdate(id, updateData);
 
-            res.json({ message: 'Order updated successfully' });
+        // Decrease stock when delivered
+        if (status === 'delivered' && item_id) {
+            await Stock.findByIdAndUpdate(item_id, { $inc: { quantity: -1 } });
         }
-    );
+
+        res.json({ message: 'Order updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Health Check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
+    res.json({ status: 'OK', message: 'Server is running', database: 'MongoDB' });
 });
 
 // Start Server
 app.listen(PORT, () => {
     console.log(`\n🚀 Backend server running on http://localhost:${PORT}`);
     console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
-    console.log(`💾 Database: office_order.db\n`);
+    console.log(`💾 Database: MongoDB\n`);
 });
 
 // Graceful Shutdown
-process.on('SIGINT', () => {
-    db.close((err) => {
-        if (err) {
-            console.error(err.message);
-        }
-        console.log('\n✅ Database connection closed');
-        process.exit(0);
-    });
+process.on('SIGINT', async () => {
+    await mongoose.connection.close();
+    console.log('\n✅ MongoDB connection closed');
+    process.exit(0);
 });
